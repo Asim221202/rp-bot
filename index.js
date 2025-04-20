@@ -78,6 +78,17 @@ client.on('messageCreate', async message => {
     message.reply('Bir hata oluştu!');
   }
 });
+const express = require('express');
+const app = express();
+const port = 5000;
+
+app.get('/', (req, res) => {
+  res.send('Bot çalışıyor!');
+});
+
+app.listen(port, () => {
+  console.log(`Bot, http://localhost:${port} üzerinde dinliyor.`);
+});
 
 client.once('ready', () => {
   console.log(`${client.user.tag} olarak giriş yapıldı.`);
