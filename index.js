@@ -52,6 +52,20 @@ client.on('messageCreate', message => {
     message.reply('❌ Komutu çalıştırırken bir hata oluştu.');
   }
 });
+// interactionCreate event'i:
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction, [], true); // isSlash = true
+  } catch (error) {
+    console.error(error);
+    await interaction.reply({ content: '❌ Komutu çalıştırırken hata oluştu.', ephemeral: true });
+  }
+});
 
 // === BOT AÇILDI ===
 client.once('ready', () => {
