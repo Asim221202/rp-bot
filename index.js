@@ -1,66 +1,61 @@
-const { Client, GatewayIntentBits, Collection } = require('discord.js');
-const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { token, prefix } = require('./config.js');
+const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const config = require('./config');
 
-// Express app oluştur
-const app = express();
-const port = 3000;
-
-// Discord client'ı oluştur
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ]
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
 
-// Komutlar için collection oluştur
 client.commands = new Collection();
+const prefix = config.prefix;
 
-// Komutları yükle
+// === KOMUTLARI YÜKLE ===
 const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+if (!fs.existsSync(commandsPath)) {
+  console.error("❌ 'commands' klasörü bulunamadı.");
+  process.exit(1);
+}
 
-commandFiles.forEach(file => {
-  const command = require(path.join(commandsPath, file));
-  console.log(`Yüklenen komut: ${command.name}`);
-  client.commands.set(command.name, command);
-});
+const folders = fs.readdirSync(commandsPath);
+for (const folder of folders) {
+  const folderPath = path.join(commandsPath, folder);
+  if (!fs.lstatSync(folderPath).isDirectory()) continue;
 
-// Bot hazır olduğunda
-client.once('ready', () => {
-  console.log(`${client.user.tag} olarak giriş yapıldı.`);
-  // Web sunucusu başlat
-  app.listen(port, () => {
-    console.log(`Web server listening at http://localhost:${port}`);
-  });
-});
+  const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
+  for (const file of commandFiles) {
+    const filePath = path.join(folderPath, file);
+    const command = require(filePath);
+    if (command.name) {
+      client.commands.set(command.name, command);
+      console.log(`✅ Yüklendi: ${command.name}`);
+    } else {
+      console.warn(`⚠️ Komut dosyası 'name' içermiyor: ${file}`);
+    }
+  }
+}
 
-// HTTP sunucusu route
-app.get('/', (req, res) => {
-  res.send('Bot çalışıyor!');
-});
-
-// Botun komutlarını dinle
-client.on('messageCreate', async message => {
+// === MESAJ İLE KOMUT ALGILAMA (PREFIX) ===
+client.on('messageCreate', message => {
   if (!message.content.startsWith(prefix) || message.author.bot) return;
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
-  const cmdName = args.shift().toLowerCase();
-  const command = client.commands.get(cmdName);
+  const commandName = args.shift().toLowerCase();
 
+  const command = client.commands.get(commandName);
   if (!command) return;
 
   try {
-    await command.execute(message, args);
-  } catch (err) {
-    console.error(err);
-    message.reply('Bir hata oluştu!');
+    command.execute(message, args);
+  } catch (error) {
+    console.error(error);
+    message.reply('❌ Komutu çalıştırırken bir hata oluştu.');
   }
 });
 
-// Botu başlat
-client.login(token);
+// === BOT AÇILDI ===
+client.once('ready', () => {
+  console.log(`🟢 Bot giriş yaptı: ${client.user.tag}`);
+});
+
+client.login(config.token);
