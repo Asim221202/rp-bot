@@ -1,81 +1,86 @@
-const { REST, Routes, Collection, GatewayIntentBits, Partials, Client } = require("discord.js");
-const fs = require("fs");
-const path = require("path");
-const config = require("./config.js");
+const fs = require('fs');
+const path = require('path');
+const { Client, GatewayIntentBits, Collection } = require('discord.js');
+const { token, prefix } = require('./config.js');
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ],
-  partials: [Partials.Channel]
+    GatewayIntentBits.MessageContent,
+  ]
 });
 
 client.commands = new Collection();
-const slashCommands = [];
+client.prefixCommands = new Collection();
 
-const commandFolders = fs.readdirSync("./commands");
-for (const folder of commandFolders) {
-  const commandFiles = fs
-    .readdirSync(`./commands/${folder}`)
-    .filter(file => file.endsWith(".js"));
+// Komutlar Klasörü Kontrolü
+const commandsPath = path.join(__dirname, 'commands');
+
+if (!fs.existsSync(commandsPath)) {
+  console.error("❌ HATA: 'commands' klasörü bulunamadı. Lütfen oluşturduğundan emin ol.");
+  process.exit(1);
+}
+
+const folders = fs.readdirSync(commandsPath);
+
+for (const folder of folders) {
+  const folderPath = path.join(commandsPath, folder);
+
+  if (!fs.statSync(folderPath).isDirectory()) continue;
+
+  const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
 
   for (const file of commandFiles) {
-    const command = require(`./commands/${folder}/${file}`);
-    client.commands.set(command.name, command);
+    const command = require(path.join(folderPath, file));
 
-    if (command.slashData) {
-      slashCommands.push(command.slashData.toJSON());
+    // Slash komut
+    if (command.data && command.execute) {
+      client.commands.set(command.data.name, command);
+    }
+
+    // Prefix komut
+    if (command.name && command.run) {
+      client.prefixCommands.set(command.name, command);
     }
   }
 }
 
-// Slash komutları Discord'a yükle
-client.once("ready", async () => {
-  console.log(`Bot ${client.user.tag} olarak giriş yaptı.`);
-
-  const rest = new REST({ version: "10" }).setToken(config.token);
-  try {
-    await rest.put(
-      Routes.applicationCommands(client.user.id),
-      { body: slashCommands }
-    );
-    console.log("Slash komutları yüklendi.");
-  } catch (error) {
-    console.error("Slash yükleme hatası:", error);
-  }
-});
-
-client.on("messageCreate", async message => {
-  if (!message.content.startsWith(config.prefix) || message.author.bot) return;
-
-  const args = message.content.slice(config.prefix.length).trim().split(/ +/);
-  const commandName = args.shift().toLowerCase();
-  const command = client.commands.get(commandName);
-
-  if (command && command.executePrefix) {
-    try {
-      await command.executePrefix(message, args, client);
-    } catch (err) {
-      console.error(err);
-      message.reply("Bir hata oluştu.");
-    }
-  }
-});
-
-client.on("interactionCreate", async interaction => {
-  if (!interaction.isChatInputCommand()) return;
+// Slash Komutlar
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
-  if (command && command.executeSlash) {
-    try {
-      await command.executeSlash(interaction, client);
-    } catch (err) {
-      console.error(err);
-      await interaction.reply({ content: "Bir hata oluştu.", ephemeral: true });
-    }
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (err) {
+    console.error(err);
+    await interaction.reply({ content: 'Bir hata oluştu!', ephemeral: true });
   }
 });
 
-client.login(config.token);
+// Prefix Komutlar
+client.on('messageCreate', async message => {
+  if (!message.content.startsWith(prefix) || message.author.bot) return;
+
+  const args = message.content.slice(prefix.length).trim().split(/ +/);
+  const cmdName = args.shift().toLowerCase();
+  const command = client.prefixCommands.get(cmdName);
+
+  if (!command) return;
+
+  try {
+    await command.run(client, message, args);
+  } catch (err) {
+    console.error(err);
+    message.reply('Bir hata oluştu!');
+  }
+});
+
+client.once('ready', () => {
+  console.log(`${client.user.tag} olarak giriş yapıldı.`);
+});
+
+client.login(token);
