@@ -1,16 +1,11 @@
 module.exports = {
-  name: "ping",
-  description: "Botun gecikmesini gösterir",
-  type: "both", // hem prefix hem slash
-  async execute(messageOrInteraction, args, client) {
-    const isSlash = !!messageOrInteraction.isCommand;
-
-    const pingMessage = `🏓 Gecikme: **${client.ws.ping}ms**`;
-
-    if (isSlash && messageOrInteraction.isCommand()) {
-      await messageOrInteraction.reply(pingMessage);
-    } else {
-      await messageOrInteraction.channel.send(pingMessage);
-    }
-  }
+  name: 'ping',
+  description: 'Botun pingini gösterir.',
+  async execute(message, args) {
+    const ping = Date.now() - message.createdTimestamp;
+    const apiPing = Math.round(message.client.ws.ping);
+    
+    // Botun pingini göster
+    message.channel.send(`Pong! Latency: **${ping}ms** | API Latency: **${apiPing}ms**`);
+  },
 };
