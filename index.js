@@ -66,6 +66,18 @@ client.on('interactionCreate', async interaction => {
     await interaction.reply({ content: '❌ Komutu çalıştırırken hata oluştu.', ephemeral: true });
   }
 });
+const express = require('express');
+const app = express();
+const PORT = 3000; // İstersen burayı başka bir porta değiştirebilirsin
+
+app.get('/', (req, res) => {
+  res.send('Bot aktif!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Express sunucusu çalışıyor: http://localhost:${PORT}`);
+});
+
 
 // === BOT AÇILDI ===
 client.once('ready', () => {
