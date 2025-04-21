@@ -1,41 +1,40 @@
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
-  name: 'ping',
-  description: 'Botun gecikmesini ve uptime süresini gösterir.',
-  slashData: new SlashCommandBuilder()
-    .setName('ping')
-    .setDescription('Botun gecikmesini ve uptime süresini gösterir.'),
+  data: new SlashCommandBuilder()
+    .setName("ping")
+    .setDescription("Botun gecikmesini gösterir."),
+  name: "ping",
+  description: "Botun gecikmesini gösterir.",
+  run: async (client, messageOrInteraction, args = []) => {
+    const isSlash = !!messageOrInteraction.isChatInputCommand;
 
-  async execute(messageOrInteraction, args, isSlash = false) {
-    const now = Date.now();
-    const latency = now - (isSlash ? messageOrInteraction.createdTimestamp : messageOrInteraction.createdTimestamp);
-    const uptime = process.uptime(); // saniye cinsinden
-    const uptimeString = formatDuration(uptime);
+    const send = async (content) => {
+      if (isSlash) return await messageOrInteraction.reply(content);
+      else return await messageOrInteraction.channel.send(content);
+    };
+
+    const start = Date.now();
+    const msg = await send("Gecikme hesaplanıyor...");
+    const end = Date.now();
+
+    const botPing = end - start;
+    const apiPing = Math.round(client.ws.ping);
 
     const embed = new EmbedBuilder()
-      .setTitle('🏓 Ping Bilgisi')
+      .setTitle("🏓・Pong!")
+      .setColor(0x5865F2)
       .addFields(
-        { name: '🔁 Gecikme', value: `${latency}ms`, inline: true },
-        { name: '⏱️ Uptime', value: uptimeString, inline: true }
+        { name: '🤖 Bot Gecikmesi', value: `${botPing}ms`, inline: true },
+        { name: '💻 API Gecikmesi', value: `${apiPing}ms`, inline: true },
+        { name: '⏱️ Uptime', value: `<t:${Math.floor(Date.now() / 1000 - process.uptime())}:R>`, inline: true }
       )
-      .setColor('#00bfff')
-      .setTimestamp();
+      .setFooter({ text: ` ${client.user.username} • ${new Date().toLocaleDateString("tr-TR")} ${new Date().toLocaleTimeString("tr-TR")}` });
 
     if (isSlash) {
-      await messageOrInteraction.reply({ embeds: [embed] });
+      await messageOrInteraction.editReply({ content: " ", embeds: [embed] });
     } else {
-      await messageOrInteraction.reply({ embeds: [embed] });
+      await msg.edit({ content: " ", embeds: [embed] });
     }
   }
 };
-
-// Uptime formatlayıcı
-function formatDuration(seconds) {
-  const d = Math.floor(seconds / (3600 * 24));
-  const h = Math.floor((seconds % (3600 * 24)) / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = Math.floor(seconds % 60);
-
-  return `${d}g ${h}s ${m}d ${s}s`;
-}
