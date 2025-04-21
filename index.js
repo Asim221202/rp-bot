@@ -6,6 +6,8 @@ const config = require('./config');
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
+const connectMongo = require('./database/mongo');
+connectMongo();
 
 client.commands = new Collection();
 const prefix = config.prefix;
