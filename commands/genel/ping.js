@@ -1,40 +1,43 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const os = require('os');
 
 module.exports = {
+  name: 'ping', // prefix için
+  description: 'Botun gecikmesini gösterir.',
   data: new SlashCommandBuilder()
-    .setName("ping")
-    .setDescription("Botun gecikmesini gösterir."),
-  name: "ping",
-  description: "Botun gecikmesini gösterir.",
-  run: async (client, messageOrInteraction, args = []) => {
-    const isSlash = !!messageOrInteraction.isChatInputCommand;
+    .setName('ping')
+    .setDescription('Botun gecikmesini gösterir.'),
 
-    const send = async (content) => {
-      if (isSlash) return await messageOrInteraction.reply(content);
-      else return await messageOrInteraction.channel.send(content);
-    };
-
-    const start = Date.now();
-    const msg = await send("Gecikme hesaplanıyor...");
-    const end = Date.now();
-
-    const botPing = end - start;
-    const apiPing = Math.round(client.ws.ping);
+  async execute(messageOrInteraction, args, isSlash = false, client) {
+    const sentAt = Date.now();
+    const uptime = formatDuration(process.uptime() * 1000);
+    const latency = Date.now() - sentAt;
+    const apiLatency = client.ws.ping;
 
     const embed = new EmbedBuilder()
-      .setTitle("🏓・Pong!")
-      .setColor(0x5865F2)
+      .setColor(0x00AE86)
+      .setTitle('🏓・Pong!')
+      .setDescription(`Gecikme değerleri burada:`)
       .addFields(
-        { name: '🤖 Bot Gecikmesi', value: `${botPing}ms`, inline: true },
-        { name: '💻 API Gecikmesi', value: `${apiPing}ms`, inline: true },
-        { name: '⏱️ Uptime', value: `<t:${Math.floor(Date.now() / 1000 - process.uptime())}:R>`, inline: true }
+        { name: '🤖 ┆ Bot Gecikmesi', value: `${latency}ms`, inline: true },
+        { name: '💻 ┆ API Gecikmesi', value: `${apiLatency}ms`, inline: true },
+        { name: '⏳ ┆ Uptime Süresi', value: `${uptime}`, inline: false }
       )
-      .setFooter({ text: ` ${client.user.username} • ${new Date().toLocaleDateString("tr-TR")} ${new Date().toLocaleTimeString("tr-TR")}` });
+      .setFooter({ text: `© Botunuz - ${new Date().toLocaleDateString('tr-TR')}` });
 
     if (isSlash) {
-      await messageOrInteraction.editReply({ content: " ", embeds: [embed] });
+      return messageOrInteraction.reply({ embeds: [embed] });
     } else {
-      await msg.edit({ content: " ", embeds: [embed] });
+      return messageOrInteraction.channel.send({ embeds: [embed] });
     }
   }
 };
+
+// Süreyi okunabilir forma çeviren yardımcı fonksiyon
+function formatDuration(ms) {
+  const sec = Math.floor(ms / 1000) % 60;
+  const min = Math.floor(ms / (1000 * 60)) % 60;
+  const hrs = Math.floor(ms / (1000 * 60 * 60)) % 24;
+  const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+  return `${days}g ${hrs}s ${min}d ${sec}sn`;
+}
