@@ -1,7 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
 const os = require('os');
-const moment = require('moment');
-require('moment-duration-format');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -9,11 +7,15 @@ module.exports = {
     .setDescription('Bot hakkında bilgi verir.'),
   name: 'botbilgi',
   description: 'Bot hakkında bilgi verir.',
-  async execute(messageOrInteraction, args, passedClient, isSlash) {
-    const client = isSlash ? messageOrInteraction.client : passedClient;
-    
-    const uptime = moment.duration(client.uptime).format('D [gün], H [saat], m [dakika], s [saniye]');
-    
+  async execute(messageOrInteraction, args, client, isSlash) {
+    const uptimeMs = client.uptime;
+    const seconds = Math.floor((uptimeMs / 1000) % 60);
+    const minutes = Math.floor((uptimeMs / (1000 * 60)) % 60);
+    const hours = Math.floor((uptimeMs / (1000 * 60 * 60)) % 24);
+    const days = Math.floor(uptimeMs / (1000 * 60 * 60 * 24));
+
+    const uptime = `${days} gün, ${hours} saat, ${minutes} dakika, ${seconds} saniye`;
+
     const embed = {
       title: 'Bot Bilgisi',
       color: 0x3498db,
