@@ -9,7 +9,8 @@ module.exports = {
   aliases: ["gecikme"],
 
   run: async (client, message) => {
-    const uptime = process.uptime();
+    const uptime = moment.duration(process.uptime(), 'seconds');
+const uptimeString = `${uptime.hours()} saat, ${uptime.minutes()} dakika, ${uptime.seconds()} saniye`;
     const apiLatency = client.ws.ping;
 
     const embed = new EmbedBuilder()
@@ -18,9 +19,10 @@ module.exports = {
       .addFields(
         { name: "🤖 ┆ Bot Gecikmesi", value: `${Date.now() - message.createdTimestamp}ms`, inline: true },
         { name: "💻 ┆ API Gecikmesi", value: `${apiLatency}ms`, inline: true },
-        { name: "⏱️ ┆ Uptime", value: `<t:${Math.floor((Date.now() - uptime * 1000) / 1000)}:R>`, inline: true }
+        { name: "⏱️ ┆ Uptime", value: `${uptimeString}`, inline: true }
       )
-      .setFooter({ text: `OmniRP - ${new Date().toLocaleString("tr-TR")}` });
+      .setFooter({ text: `OmniRP` })
+     .setTimestamp();
 
     message.reply({ embeds: [embed] });
   },
