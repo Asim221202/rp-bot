@@ -80,7 +80,13 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Express sunucusu çalışıyor: http://localhost:${PORT}`);
 });
+const eventsPath = path.join(__dirname, 'events');
+const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
 
+for (const file of eventFiles) {
+  const event = require(path.join(eventsPath, file));
+  client.on(event.name, event.execute.bind(null, client));
+}
 
 // === BOT AÇILDI ===
 client.once('ready', () => {
