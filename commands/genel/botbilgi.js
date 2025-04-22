@@ -1,4 +1,3 @@
-
 const { SlashCommandBuilder } = require('discord.js');
 const os = require('os');
 const moment = require('moment');
@@ -10,7 +9,9 @@ module.exports = {
     .setDescription('Bot hakkında bilgi verir.'),
   name: 'botbilgi',
   description: 'Bot hakkında bilgi verir.',
-  async execute(messageOrInteraction, args, client, isSlash) {
+  async execute(messageOrInteraction, args, passedClient, isSlash) {
+    const client = isSlash ? messageOrInteraction.client : passedClient;
+    
     const uptime = moment.duration(client.uptime).format('D [gün], H [saat], m [dakika], s [saniye]');
     
     const embed = {
