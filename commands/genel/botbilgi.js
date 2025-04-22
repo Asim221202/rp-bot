@@ -8,7 +8,8 @@ module.exports = {
   name: 'botbilgi',
   description: 'Bot hakkında bilgi verir.',
   async execute(messageOrInteraction, args, client, isSlash) {
-    const uptimeMs = client.uptime;
+    // Uptime'ı manuel olarak hesaplama
+    const uptimeMs = client.uptime;  // Burada client.uptime'ı kullanıyoruz
     const seconds = Math.floor((uptimeMs / 1000) % 60);
     const minutes = Math.floor((uptimeMs / (1000 * 60)) % 60);
     const hours = Math.floor((uptimeMs / (1000 * 60 * 60)) % 24);
@@ -32,9 +33,11 @@ module.exports = {
       footer: { text: `${client.user.username} • ${new Date().toLocaleDateString()}` }
     };
 
+    // Slash komutuysa, interaction.reply kullanılacak
     if (isSlash) {
       await messageOrInteraction.reply({ embeds: [embed] });
     } else {
+      // Prefix komutuysa, mesajı gönder
       await messageOrInteraction.channel.send({ embeds: [embed] });
     }
   }
