@@ -1,3 +1,4 @@
+
 const { SlashCommandBuilder } = require('discord.js');
 const os = require('os');
 const moment = require('moment');
@@ -11,6 +12,7 @@ module.exports = {
   description: 'Bot hakkında bilgi verir.',
   async execute(messageOrInteraction, args, client, isSlash) {
     const uptime = moment.duration(client.uptime).format('D [gün], H [saat], m [dakika], s [saniye]');
+    
     const embed = {
       title: 'Bot Bilgisi',
       color: 0x3498db,
