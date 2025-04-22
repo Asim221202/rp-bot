@@ -48,13 +48,13 @@ client.on('messageCreate', message => {
   if (!command) return;
 
   try {
-    command.execute(message, args);
+    command.execute(message, args, client, false); // client objesini geçiyoruz
   } catch (error) {
     console.error(error);
     message.reply('❌ Komutu çalıştırırken bir hata oluştu.');
   }
 });
-// interactionCreate event'i:
+
 client.on('interactionCreate', async interaction => {
   if (!interaction.isCommand()) return;
 
@@ -62,12 +62,13 @@ client.on('interactionCreate', async interaction => {
   if (!command) return;
 
   try {
-    await command.execute(interaction, [], true); // isSlash = true
+    await command.execute(interaction, [], client, true); // client objesini geçiyoruz
   } catch (error) {
     console.error(error);
     await interaction.reply({ content: '❌ Komutu çalıştırırken hata oluştu.', ephemeral: true });
   }
 });
+
 const express = require('express');
 const app = express();
 const PORT = 3000; // İstersen burayı başka bir porta değiştirebilirsin
