@@ -32,21 +32,42 @@ module.exports = {
     const baslik = interaction.options.getString('baslik') || 'Hoş geldiniz!';
     const description = interaction.options.getString('description') || 'Sunucuya hoş geldiniz!';
     const footer = interaction.options.getString('footer') || 'Sunucu Yönetimi';
-    const image = interaction.options.getString('image') || '';
+    const image = interaction.options.getString('image') || null; // Görsel boş ise null olarak ayarlayalım
 
-    // Sunucunun mevcut ayarlarını al
-    let settings = await getServerSettings(guildId);
+    try {
+      // Sunucunun mevcut ayarlarını al
+      let settings = await getServerSettings(guildId);
 
-    // Giriş logu ayarlarını güncelle
-    settings.girisLog.kanalId = kanal.id;
-    settings.girisLog.embed.baslik = baslik;
-    settings.girisLog.embed.description = description;
-    settings.girisLog.embed.footer = footer;
-    settings.girisLog.embed.image = image;
+      // Eğer ayarlar bulunmazsa, yeni bir ayar nesnesi oluştur
+      if (!settings) {
+        settings = {
+          guildId: guildId,
+          girisLog: {
+            kanalId: kanal.id,
+            embed: {
+              baslik: baslik,
+              description: description,
+              footer: footer,
+              image: image,
+            }
+          }
+        };
+      } else {
+        // Giriş logu ayarlarını güncelle
+        settings.girisLog.kanalId = kanal.id;
+        settings.girisLog.embed.baslik = baslik;
+        settings.girisLog.embed.description = description;
+        settings.girisLog.embed.footer = footer;
+        settings.girisLog.embed.image = image;
+      }
 
-    // Ayarları veritabanına kaydet
-    await setServerSettings(guildId, settings);
+      // Ayarları veritabanına kaydet
+      await setServerSettings(guildId, settings);
 
-    await interaction.reply(`Giriş logu ve embed ayarları başarıyla ${kanal} olarak ayarlandı.`);
+      await interaction.reply(`Giriş logu ve embed ayarları başarıyla ${kanal} olarak ayarlandı.`);
+    } catch (error) {
+      console.error('Ayarlarda bir hata oluştu:', error);
+      await interaction.reply('Giriş logu ayarlarını yaparken bir hata oluştu.');
+    }
   }
 };
