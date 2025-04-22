@@ -1,45 +1,36 @@
-const { EmbedBuilder } = require("discord.js");
-const os = require("os");
-const moment = require("moment");
-require("moment-duration-format");
+const { SlashCommandBuilder } = require('discord.js');
+const os = require('os');
+const moment = require('moment');
+require('moment-duration-format');
 
 module.exports = {
-  name: "botbilgi",
-  description: "Bot hakkında detaylı bilgileri gösterir.",
-  category: "genel",
-  type: 1,
-  aliases: ["bot", "hakkımda"],
+  data: new SlashCommandBuilder()
+    .setName('botbilgi')
+    .setDescription('Bot hakkında bilgi verir.'),
+  name: 'botbilgi',
+  description: 'Bot hakkında bilgi verir.',
+  async execute(messageOrInteraction, args, client, isSlash) {
+    const uptime = moment.duration(client.uptime).format('D [gün], H [saat], m [dakika], s [saniye]');
+    const embed = {
+      title: 'Bot Bilgisi',
+      color: 0x3498db,
+      fields: [
+        { name: 'Bot İsmi', value: client.user.tag, inline: true },
+        { name: 'Ping', value: `${client.ws.ping}ms`, inline: true },
+        { name: 'Uptime', value: uptime, inline: true },
+        { name: 'Sunucu Sayısı', value: `${client.guilds.cache.size}`, inline: true },
+        { name: 'Kullanıcı Sayısı', value: `${client.users.cache.size}`, inline: true },
+        { name: 'Node.js Sürümü', value: process.version, inline: true },
+        { name: 'Platform', value: os.platform(), inline: true },
+        { name: 'RAM Kullanımı', value: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`, inline: true }
+      ],
+      footer: { text: `${client.user.username} • ${new Date().toLocaleDateString()}` }
+    };
 
-  run: async (client, message) => {
-    const uptime = moment.duration(client.uptime).format("D [gün], H [saat], m [dk], s [sn]");
-    const embed = createBotInfoEmbed(client, uptime);
-    message.reply({ embeds: [embed] });
-  },
-
-  execute: async (interaction) => {
-    const client = interaction.client;
-    const uptime = moment.duration(client.uptime).format("D [gün], H [saat], m [dk], s [sn]");
-    const embed = createBotInfoEmbed(client, uptime);
-    await interaction.reply({ embeds: [embed] });
-  },
+    if (isSlash) {
+      await messageOrInteraction.reply({ embeds: [embed] });
+    } else {
+      await messageOrInteraction.channel.send({ embeds: [embed] });
+    }
+  }
 };
-
-function createBotInfoEmbed(client, uptime) {
-  const embed = new EmbedBuilder()
-    .setTitle("🤖・Bot Bilgileri")
-    .setThumbnail(client.user.displayAvatarURL())
-    .addFields(
-      { name: "📛 İsim", value: `${client.user.username}`, inline: true },
-      { name: "🆔 ID", value: `${client.user.id}`, inline: true },
-      { name: "📶 Ping", value: `${client.ws.ping}ms`, inline: true },
-      { name: "🧠 Bellek Kullanımı", value: `${(process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2)} MB`, inline: true },
-      { name: "🕒 Aktif Süre", value: uptime, inline: true },
-      { name: "📚 Komut Sayısı", value: `${client.commands.size}`, inline: true },
-      { name: "🌐 Sunucu Sayısı", value: `${client.guilds.cache.size}`, inline: true },
-      { name: "👥 Kullanıcı Sayısı", value: `${client.users.cache.size}`, inline: true }
-    )
-    .setColor("Random")
-    .setFooter({ text: "OmniRP Bot • 2025" });
-
-  return embed;
-}
