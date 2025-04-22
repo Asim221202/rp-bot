@@ -1,5 +1,5 @@
 const { EmbedBuilder } = require('discord.js');
-const { getServerSettings } = require('../../utils/settings');
+const { getServerSettings } = require('../utils/settings');
 
 module.exports = {
   name: 'guildMemberAdd',
