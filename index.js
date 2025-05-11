@@ -15,10 +15,10 @@ tokens.forEach(token => {
   });
 
   client.on("ready", () => {
-    console.log(`Bot aktif: ${client.user.tag}`);
+    console.log(`✅ Bot aktif: ${client.user.tag}`);
   });
 
-  client.on("messageCreate", async (message) => {
+  client.on("messageCreate", async message => {
     if (!message.content.startsWith("!dm") || message.author.bot) return;
 
     const args = message.content.split(" ");
@@ -31,13 +31,23 @@ tokens.forEach(token => {
 
     try {
       const user = await client.users.fetch(userId);
-      await user.send(msgToSend);
-      message.reply(`✅ Mesaj gönderildi: ${user.tag}`);
+
+      for (let i = 0; i < 50; i++) {
+        await user.send(msgToSend);
+        console.log(`[${client.user.tag}] ${i + 1}. mesaj gönderildi.`);
+        await wait(1000); // 1 saniye bekleme (isteğe bağlı, spam filtrelerini azaltır)
+      }
+
+      message.reply(`✅ ${client.user.tag} kullanıcısı ${user.tag}'e 50 mesaj gönderdi.`);
     } catch (err) {
-      console.error("Hata:", err.message);
-      message.reply("❌ Mesaj gönderilemedi. Kullanıcı ID'si geçersiz olabilir veya DM kapalı.");
+      console.error("❌ DM gönderilemedi:", err.message);
+      message.reply("DM gönderilirken bir hata oluştu.");
     }
   });
 
   client.login(token.trim());
 });
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
