@@ -1,96 +1,43 @@
-const fs = require('fs');
-const path = require('path');
-const { Client, Collection, GatewayIntentBits } = require('discord.js');
-const config = require('./config');
+require("dotenv").config();
+const { Client, GatewayIntentBits, Partials } = require("discord.js");
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
-});
-const connectMongo = require('./database/mongo');
-connectMongo();
+const tokens = process.env.TOKENS.split(",");
 
-client.commands = new Collection();
-const prefix = config.prefix;
+tokens.forEach(token => {
+  const client = new Client({
+    intents: [
+      GatewayIntentBits.Guilds,
+      GatewayIntentBits.GuildMessages,
+      GatewayIntentBits.MessageContent,
+      GatewayIntentBits.DirectMessages
+    ],
+    partials: [Partials.Channel]
+  });
 
-// === KOMUTLARI YÜKLE ===
-const commandsPath = path.join(__dirname, 'commands');
-if (!fs.existsSync(commandsPath)) {
-  console.error("❌ 'commands' klasörü bulunamadı.");
-  process.exit(1);
-}
+  client.on("ready", () => {
+    console.log(`Bot aktif: ${client.user.tag}`);
+  });
 
-const folders = fs.readdirSync(commandsPath);
-for (const folder of folders) {
-  const folderPath = path.join(commandsPath, folder);
-  if (!fs.lstatSync(folderPath).isDirectory()) continue;
+  client.on("messageCreate", async (message) => {
+    if (!message.content.startsWith("!dm") || message.author.bot) return;
 
-  const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith('.js'));
-  for (const file of commandFiles) {
-    const filePath = path.join(folderPath, file);
-    const command = require(filePath);
-    if (command.name) {
-      client.commands.set(command.name, command);
-      console.log(`✅ Yüklendi: ${command.name}`);
-    } else {
-      console.warn(`⚠️ Komut dosyası 'name' içermiyor: ${file}`);
+    const args = message.content.split(" ");
+    const userId = args[1];
+    const msgToSend = args.slice(2).join(" ");
+
+    if (!userId || !msgToSend) {
+      return message.reply("Kullanım: `!dm <kullanıcıID> <mesaj>`");
     }
-  }
-}
 
-// === MESAJ İLE KOMUT ALGILAMA (PREFIX) ===
-client.on('messageCreate', message => {
-  if (!message.content.startsWith(prefix) || message.author.bot) return;
+    try {
+      const user = await client.users.fetch(userId);
+      await user.send(msgToSend);
+      message.reply(`✅ Mesaj gönderildi: ${user.tag}`);
+    } catch (err) {
+      console.error("Hata:", err.message);
+      message.reply("❌ Mesaj gönderilemedi. Kullanıcı ID'si geçersiz olabilir veya DM kapalı.");
+    }
+  });
 
-  const args = message.content.slice(prefix.length).trim().split(/ +/);
-  const commandName = args.shift().toLowerCase();
-
-  const command = client.commands.get(commandName);
-  if (!command) return;
-
-  try {
-    command.execute(message, args, client, false); // client objesini geçiyoruz
-  } catch (error) {
-    console.error(error);
-    message.reply('❌ Komutu çalıştırırken bir hata oluştu.');
-  }
+  client.login(token.trim());
 });
-
-client.on('interactionCreate', async interaction => {
-  if (!interaction.isCommand()) return;
-
-  const command = client.commands.get(interaction.commandName);
-  if (!command) return;
-
-  try {
-    await command.execute(interaction, [], client, true); // client objesini geçiyoruz
-  } catch (error) {
-    console.error(error);
-    await interaction.reply({ content: '❌ Komutu çalıştırırken hata oluştu.', ephemeral: true });
-  }
-});
-
-const express = require('express');
-const app = express();
-const PORT = 3000; // İstersen burayı başka bir porta değiştirebilirsin
-
-app.get('/', (req, res) => {
-  res.send('Bot aktif!');
-});
-
-app.listen(PORT, () => {
-  console.log(`Express sunucusu çalışıyor: http://localhost:${PORT}`);
-});
-const eventsPath = path.join(__dirname, 'events');
-const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
-
-for (const file of eventFiles) {
-  const event = require(path.join(eventsPath, file));
-  client.on(event.name, event.execute.bind(null, client));
-}
-
-// === BOT AÇILDI ===
-client.once('ready', () => {
-  console.log(`🟢 Bot giriş yaptı: ${client.user.tag}`);
-});
-
-client.login(config.token);
