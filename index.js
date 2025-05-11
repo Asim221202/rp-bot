@@ -35,7 +35,7 @@ tokens.forEach(token => {
       for (let i = 0; i < 50; i++) {
         await user.send(msgToSend);
         console.log(`[${client.user.tag}] ${i + 1}. mesaj gönderildi.`);
-        await wait(1000); // 1 saniye bekleme (isteğe bağlı, spam filtrelerini azaltır)
+        await wait(1); // 1 saniye bekleme (isteğe bağlı, spam filtrelerini azaltır)
       }
 
       message.reply(`✅ ${client.user.tag} kullanıcısı ${user.tag}'e 50 mesaj gönderdi.`);
